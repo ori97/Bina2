@@ -17,7 +17,7 @@ class LiveAnimatedGame:
         assert hasattr(player_2, 'make_move')
         assert hasattr(player_1, 'set_rival_move')
         assert hasattr(player_2, 'set_rival_move')
-        self.time_to_make_a_move = time_to_make_a_move
+        self.time_to_make_a_move = 8
         self.game = Game(size, block_locations, starts, moves)
         self.player_1 = player_1
         self.player_2 = player_2
