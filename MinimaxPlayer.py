@@ -2,6 +2,7 @@ import time as t
 import random
 import numpy as np
 import functools as tls
+from NotAnimatedGame import NotAnimatedGame
 DECIDING_AGENT = 1
 class MinimaxPlayer:
     def __init__(self):
@@ -56,22 +57,33 @@ class MinimaxPlayer:
         i = loc[0] + move[0]
         j = loc[1] + move[1]
         return 0 <= i < len(self.board) and 0 <= j < len(self.board[0]) and self.board[i][j] == 0
+    """
+    calculating number of reacable nodes using BFS
+    """
     def number_of_reachable_nodes(self,loc):
-        visited=[]
         queue=[]
         queue.append(loc)
-        count_reachable = 0
-        while len(queue) > 0:
-            head_loc = queue[0]
-            visited.append(head_loc)
-            queue.remove(head_loc)
+        index=0
+        while index < len(queue):
+            head_loc = queue[index]
+            index+=1
             for d in self.directions:
                 i,j = head_loc[0] + d[0], head_loc[1]+d[1]
-                if (i,j) not in visited and (i,j) not in queue and self.check_move((i,j)):
+                if (i,j) not in queue and self.check_move((i,j)):
                     queue.append((i,j))
-                    count_reachable += 1
-        return count_reachable
 
+        return index
+    def longest_route_till_block(self,loc,Hasam=10):
+        if Hasam == 0:
+            return 0
+        max_path_length = 0
+        for d in self.directions:
+            if self.check_move(loc,d):
+                self.board[loc[0]+d[0],loc[1]+d[1]]=-1
+                cur_max_length=self.longest_route_till_block((loc[0]+d[0],loc[1]+d[1]),Hasam-1)+1
+                self.board[loc[0]+d[0],loc[1]+d[1]]=0
+                max_path_length=max(cur_max_length,max_path_length)
+        return max_path_length
     def count_zeroes(self):
         counter = 0
         for i, row in enumerate(self.board):
@@ -89,23 +101,31 @@ class MinimaxPlayer:
 
     def heuristic(self):
         # return np.abs(self.loc[0]-self.opponent_loc[0])+np.abs(self.loc[1]-self.opponent_loc[1])
-        fictur = [self.count_zeroes(), 3, 6]
+        count_zeroes=self.count_zeroes()
+        fictur = [count_zeroes, 9, count_zeroes]
         weights = [1, 0, 0]
         hueristics = [self.number_of_reachable_nodes(self.loc) - self.number_of_reachable_nodes(self.opponent_loc),
                       len(self.steps_available(self.loc)) - len(self.steps_available(self.opponent_loc)),
-                      2 * len(self.steps_available(self.loc)) - len(self.steps_available(self.opponent_loc))]
+                      self.longest_route_till_block(self.loc)-self.longest_route_till_block(self.opponent_loc)]
         return tls.reduce(lambda x, y: x + y, list(map(lambda a, b, c: a * b / c, hueristics, weights, fictur)))
         # return self.simple_player_heuristic(player)
         #return self.simple_player_heuristic(player)
+        """
+        count = 0
+        for d in self.directions:
+            if self.check_move(self.loc,d):
+                count+=1
+        return count
+        """
     def minimax(self, depth, player, leafs_count=[0]):
         game_is_won, winning_player = self.is_game_won()
         leafs_count[0] += 1  # assert that is leaf - change it after the last elif statement
         if self.game_is_tied():
             return 0
         elif game_is_won:
-            if winning_player == DECIDING_AGENT:# and player == DECIDING_AGENT:
+            if winning_player == DECIDING_AGENT and player != DECIDING_AGENT:
                 return float("inf")
-            elif winning_player != DECIDING_AGENT:# and player != DECIDING_AGENT:
+            elif winning_player != DECIDING_AGENT and player == DECIDING_AGENT:
                 return float("-inf")
         elif depth == 0:
             return self.heuristic() # Todo change hueristic
@@ -152,35 +172,48 @@ class MinimaxPlayer:
                 self.board[self.loc] = 0
                 self.loc = self.loc[0] - d[0], self.loc[1] - d[1]
         return max_value_move
-
+    def player_got_only_one_move(self):
+        count_moves=0
+        one_move = None
+        for d in self.directions:
+            if self.check_move(self.loc,d):
+                count_moves+=1
+                one_move = d
+        if count_moves != 1:
+            return None
+        return one_move
     def make_move(self, time):
         time_start = t.time()
-        d = 1
-        leafs_count=[0]
-        move = self.choose_move(d)
-        last_iteration_time = t.time()-time_start
-        next_iteration_max_time = 3*last_iteration_time
-        time_until_now = t.time() - time_start
-        DEBUG = self.loc == (3,15)
-        # DEBUG = False
-        while time_until_now + next_iteration_max_time < time or (DEBUG and d<20):
-            d+= 1
-            iteration_start_time = t.time()
-            leafs_count[0]=0
+        only_move = self.player_got_only_one_move()
+        if only_move is not None:
+            move = only_move
+        else:
+            d = 1
+            leafs_count=[0]
             move = self.choose_move(d)
-            last_iteration_time = t.time()-iteration_start_time
-            next_iteration_max_time = 3*last_iteration_time
+            last_iteration_time = t.time()-time_start
+            next_iteration_max_time = 4*last_iteration_time
             time_until_now = t.time() - time_start
-        """
-        if move is None:
-            # print(self.board)
-            exit()
-        """
-
+            # DEBUG = self.loc == (1,6)
+            DEBUG = False
+            while time_until_now + next_iteration_max_time < time or (DEBUG and d<100):
+                d+= 1
+                iteration_start_time = t.time()
+                leafs_count[0]=0
+                move = self.choose_move(d)
+                last_iteration_time = t.time()-iteration_start_time
+                next_iteration_max_time = 4*last_iteration_time
+                time_until_now = t.time() - time_start
+            """
+            if move is None:
+                # print(self.board)
+                exit()
+            """
         self.loc=(self.loc[0]+move[0],self.loc[1]+move[1])
         self.board[self.loc] = -1
         return move
 
     def set_rival_move(self, loc):
+        self.board[self.opponent_loc]=-1
         self.board[loc] = -1
         self.opponent_loc=loc

@@ -9,7 +9,7 @@ import sys, os
 # from PyQt4.QtCore import pyqtRemoveInputHook
 
 class NotAnimatedGame:
-    def __init__(self, size, block_locations, starts, player_1, player_2, moves='regular', time_to_make_a_move=2,
+    def __init__(self, size, block_locations, starts, player_1, player_2, moves='regular', time_to_make_a_move=1,
                  print_game_in_terminal=True):
         assert hasattr(player_1, 'set_game_params')
         assert hasattr(player_2, 'set_game_params')
@@ -41,6 +41,22 @@ class NotAnimatedGame:
         while True:
             if self.t == 0 and self.print_game_in_terminal:
                 print('\nInitial board:')
+                """
+                self.game.board.get_map_for_player_i(i)[0,7]=-1
+                self.game.board.get_map_for_player_i(i)[0,8]=-1
+                self.game.board.get_map_for_player_i(i)[0,5]=-1
+                self.game.board.get_map_for_player_i(i)[0,6]=-1
+                self.game.board.get_map_for_player_i(i)[1, 5] = -1
+                self.game.board.get_map_for_player_i(i)[1,6]=1
+                self.game.board.get_map_for_player_i(i)[1,7]=2
+                self.game.board.get_map_for_player_i(i)[2,7]=-1
+                self.game.board.get_map_for_player_i(i)[2,8]=-1
+                self.game.board.get_map_for_player_i(i)[1,8]=-1
+                print("---DEBUG BOARD---")
+                self.print_board_to_terminal(board)
+                print("---DEBUG BOARD---")
+                
+                """
                 board = self.game.board.get_map_for_player_i(1)
                 self.print_board_to_terminal(board)
             player_index = self.t % 2
@@ -110,12 +126,20 @@ class NotAnimatedGame:
     def print_board_to_terminal(self, board):
         board_to_print = np.flipud(board.copy())
         # print(board_to_print)
-        import colorama
         from colorama import Fore, Style
         print('_' * len(board_to_print[0]) * 4)
-
         for row in board_to_print:
-            row = [str(int(x)) if x != -1 else Fore.LIGHTBLUE_EX + 'X'+Style.RESET_ALL for x in row]
+            new_row=[]
+            for x in row:
+                if x==0:
+                    new_row.append('0')
+                elif x==1:
+                    new_row.append(Fore.GREEN+'1'+Style.RESET_ALL)
+                elif x==2:
+                    new_row.append(Fore.RED + '2' + Style.RESET_ALL)
+                else:
+                    new_row.append(Fore.LIGHTBLUE_EX + 'X'+Style.RESET_ALL)
+            row=new_row
             print(' | '.join(row))
             print('_' * len(row) * 4)
 
@@ -171,25 +195,26 @@ def create_flags():
 
 
 if __name__ == '__main__':
-    # print('runing')
-    args = sys.argv.copy()
+    while True:
+        # print('runing')
+        args = sys.argv.copy()
 
-    player_1_type = args[1]
-    player_2_type = args[2]
-    module_1 = __import__(player_1_type)
-    module_2 = __import__(player_2_type)
-    player_1 = get_player(player_1_type, module_1)
-    player_2 = get_player(player_2_type, module_2)
+        player_1_type = args[1]
+        player_2_type = args[2]
+        module_1 = __import__(player_1_type)
+        module_2 = __import__(player_2_type)
+        player_1 = get_player(player_1_type, module_1)
+        player_2 = get_player(player_2_type, module_2)
 
-    d = create_flags()
-    map_index = d['map']
-    map = maps[map_index]
-    time_to_make_a_move = d['time_to_make_a_move']
-    print_in_terminal = d['print_in_terminal']
+        d = create_flags()
+        map_index = d['map']
+        map = maps[map_index]
+        time_to_make_a_move = d['time_to_make_a_move']
+        print_in_terminal = d['print_in_terminal']
 
-    print('Starting Game')
-    print(player_1_type, 'VS', player_2_type)
-    print('Board', map_index)
-    print('Players (besides LivePlayer) have', time_to_make_a_move, 'seconds to make a move')
-    NotAnimatedGame(map[0], map[1], map[2], player_1=player_1, player_2=player_2,
-                     time_to_make_a_move=time_to_make_a_move, print_game_in_terminal=print_in_terminal)
+        print('Starting Game')
+        print(player_1_type, 'VS', player_2_type)
+        print('Board', map_index)
+        print('Players (besides LivePlayer) have', time_to_make_a_move, 'seconds to make a move')
+        NotAnimatedGame(map[0], map[1], map[2], player_1=player_1, player_2=player_2,
+                         time_to_make_a_move=time_to_make_a_move, print_game_in_terminal=print_in_terminal)

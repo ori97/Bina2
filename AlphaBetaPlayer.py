@@ -8,25 +8,26 @@ class AlphaBetaPlayer(MinimaxPlayer):
     def __init__(self):
         super(AlphaBetaPlayer, self).__init__()
     """
-    def heuristic(self):
+    """def heuristic(self):
         # return np.abs(self.loc[0]-self.opponent_loc[0])+np.abs(self.loc[1]-self.opponent_loc[1])
-        fictur = [self.count_zeroes(), 3, 6]
-        weights = [1, 0, 0]
+        num_of_zeroes = self.count_zeroes()
+        fictur = [num_of_zeroes, 9, num_of_zeroes]
+        weights = [2,1,2]
         hueristics = [self.number_of_reachable_nodes(self.loc)- self.number_of_reachable_nodes(self.opponent_loc),
-                      len(self.steps_available(self.loc)) - len(self.steps_available(self.opponent_loc)),
-                      2 * len(self.steps_available(self.loc)) - len(self.steps_available(self.opponent_loc))]
+                      2*len(self.steps_available(self.loc)) - len(self.steps_available(self.opponent_loc)),
+                      self.longest_route_till_block(self.loc)-self.longest_route_till_block(self.opponent_loc)]
         return tls.reduce(lambda x, y: x + y, list(map(lambda a, b, c: a * b / c, hueristics, weights, fictur)))
         # return self.simple_player_heuristic(player)
-        #return self.simple_player_heuristic(player)
+        #return self.simple_player_heuristic(player)"""
     def minimax(self, depth, player, leafs_count=[0], alpha=float('-inf'), beta=float('inf')):
         game_is_won, winning_player = self.is_game_won()
         leafs_count[0] += 1  # assert that is leaf - change it after the last elif statement
         if self.game_is_tied():
             return 0
         elif game_is_won:
-            if winning_player == DECIDING_AGENT:
+            if winning_player == DECIDING_AGENT and player != DECIDING_AGENT:
                 return float("inf")
-            else:
+            elif winning_player != DECIDING_AGENT and player == DECIDING_AGENT:
                 return float("-inf")
         elif depth == 0:
             return self.heuristic()  # Todo change hueristic
